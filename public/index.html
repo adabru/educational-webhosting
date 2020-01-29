@@ -1,0 +1,57 @@
+<style>
+  #dropzone {
+    background: #aaf;
+    border: 5px solid #88f;
+    width: 80vw;
+    height: 70vh;
+  }
+  #filepicker {
+    display: none;
+  }
+  label {
+    display: inline-block;
+  }
+</style>
+
+<form method="post" enctype="multipart/form-data" action="upload" j>
+  <!-- onsubmit="return false" -->
+  <h1>Lade deine Webseite hoch! ☺</h1>
+  <label>
+    <span>Pfad: </span>
+    <input name="path" />
+  </label>
+  <label>
+    <span>Passwort: </span>
+    <input name="token" />
+  </label>
+
+  <!-- see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/webkitdirectory -->
+  <label id=filepickerLabel>
+    <!-- <span>Klicke hier um deinen Ordner hochzuladen</span> -->
+    <button id="filepickerButton">Klicke hier um deinen Ordner auszuwählen</button>
+    <input type="file" id="filepicker" name="fileList" webkitdirectory />
+  </label>
+
+  <ul id="listing"></ul>
+
+  <button id="submit">Hochladen</button>
+</form>
+<script>
+  document.getElementById("filepickerButton").onclick = function(ev) {
+    ev.preventDefault()
+    document.getElementById("filepicker").click()
+  }
+  // document.getElementById("submit").onclick = function(ev) {
+  //   console.log( document.querySelector("form").serialize() )
+  // }
+  document.getElementById("filepicker").addEventListener("change", function(event) {
+    let output = document.getElementById("listing")
+    let files = event.target.files
+
+    for (let i=0; i<files.length; i++) {
+      let item = document.createElement("li");
+      item.innerHTML = files[i].webkitRelativePath;
+      output.appendChild(item);
+    }
+  }, false);
+</script>
