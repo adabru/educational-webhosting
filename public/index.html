@@ -44,7 +44,9 @@
     let files = document.getElementById("filepicker").files
     let progress = document.getElementById("progress")
     try {
-      if (files.length > 100)
+      if (files.length == 0)
+        throw "Es sind keine Dateien ausgewählt."
+      else if (files.length > 100)
         throw "Es sind maximal 100 Dateien erlaubt."
       progress.max = files.length
       progress.value = 0

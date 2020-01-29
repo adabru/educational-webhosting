@@ -4,13 +4,20 @@ fs.createReadStream = require('fs').createReadStream
 const path = require('path')
 const url =  require('url')
 
-let token = process.argv[2] || process.env.TOKEN
-if (!token) {
-  console.log('missing TOKEN argument: either as first command line argument or as TOKEN environment variable\n\nusage:\n    node server.js TOKEN [port]\n')
+let config = {
+  port: 2222,
+  host: '::1',
+  baseurl: ''
+}
+for (let arg of process.argv.slice(2)) {
+  let [key, value] = arg.split('=')
+  key = key.substring('--'.length)
+  config[key] = value
+}
+if (!config.token) {
+  console.log('usage:\n    node server.js --token=TOKEN [--port=2222] [--baseurl=]\n')
   return
 }
-let port = process.argv[3] || process.env.PORT || 2222
-let host = process.env.HOST || '::1'
 
 let server = http.createServer( async (req, res) => {
   try {
@@ -19,12 +26,15 @@ let server = http.createServer( async (req, res) => {
     if(_url.pathname.endsWith('/'))
       _url.pathname += 'index.html'
 
-    if (_url.pathname != path.normalize(_url.pathname)) {
+    if (_url.pathname != path.normalize(_url.pathname) || !_url.pathname.startsWith(config.baseurl)) {
       res.writeHead(400)
       res.end('invalid path')
-    } else if (_url.pathname == '/upload' && req.method == 'POST') {
+    }
+    // remove baseurl
+    _url.pathname = _url.pathname.substring(config.baseurl.length)
+    if (_url.pathname == '/upload' && req.method == 'POST') {
       // check token
-      if (_url.query.token != token) {
+      if (_url.query.token != config.token) {
         res.writeHead(401)
         return res.end('wrong token')
       }
@@ -68,7 +78,7 @@ let server = http.createServer( async (req, res) => {
       .on('error', (e) => {
         console.log(e)
         if (e.code == 'EISDIR') {
-          res.writeHead(302, {'Location': _url.pathname + '/index.html'})
+          res.writeHead(302, {'Location': config.baseurl + _url.pathname + '/index.html'})
           res.end('redirect...')
         } else if (e.code == 'ENOENT') {
           res.writeHead(404)
@@ -102,13 +112,13 @@ let server = http.createServer( async (req, res) => {
   }
 })
 
-server.listen(port, host, () => console.log(`http-server running at http://${host}:${port}/`))
+server.listen(config.port, config.host, () => console.log(`http-server running at http://${config.host}:${config.port}/`))
 
 server.on('error', e => {
   console.log('An error occured while serving: ' + e)
   setTimeout(() => {
       server.close();
-      server.listen(port, host);
+      server.listen(config.port, config.host);
     }, 1000)
 })
 
