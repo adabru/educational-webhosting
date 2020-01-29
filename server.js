@@ -23,14 +23,20 @@ let server = http.createServer( async (req, res) => {
       res.writeHead(400)
       res.end('invalid path')
     } else if (_url.pathname == '/upload' && req.method == 'POST') {
+      let filepath = path.resolve( path.join('./public', _url.query.path, _url.query.file) )
+      let basepath = path.resolve('./public')
+      if (!filepath.startsWith(basepath) || filepath.length <= basepath.length) {
+        res.writeHead(400)
+        res.end('invalid file path')
+      }
       let body = []
       let size = 0
       req.on('data', (data) => {
         body.push(data)
         size += data.length
-        if (size > 100e6) {
+        if (size > 10e6) {
           res.writeHead(413)
-          res.end('max 1 MB', null, () => req.destroy())
+          res.end('max 10 MB', null, () => req.destroy())
         }
       })
       req.on('error', (e) => {
@@ -39,10 +45,16 @@ let server = http.createServer( async (req, res) => {
         res.end('error')
       })
       req.on('end', async () => {
-        let all = Buffer.concat(body)
-        console.log(all.toString('utf-8', 0, 600))
-        res.writeHead(200)
-        res.end('ok')
+        try {
+          await fs.mkdir(path.dirname(filepath), {recursive: true})
+          await fs.writeFile(filepath, Buffer.concat(body))
+          res.writeHead(200)
+          res.end('ok')
+        } catch(e) {
+          console.error(e)
+          res.writeHead(500)
+          res.end('error')
+        }
       })
     } else {
       fs.createReadStream(`./public${_url.pathname}`)

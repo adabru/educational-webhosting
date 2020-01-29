@@ -13,41 +13,58 @@
   }
 </style>
 
-<form method="post" enctype="multipart/form-data" action="upload" j>
-  <!-- onsubmit="return false" -->
+<div>
   <h1>Lade deine Webseite hoch! ☺</h1>
   <label>
     <span>Pfad: </span>
-    <input name="path" />
+    <input id="path" />
   </label>
   <label>
     <span>Passwort: </span>
-    <input name="token" />
+    <input id="token" />
   </label>
-
   <!-- see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/webkitdirectory -->
   <label id=filepickerLabel>
-    <!-- <span>Klicke hier um deinen Ordner hochzuladen</span> -->
     <button id="filepickerButton">Klicke hier um deinen Ordner auszuwählen</button>
-    <input type="file" id="filepicker" name="fileList" webkitdirectory />
+    <input type="file" id="filepicker" webkitdirectory />
   </label>
-
   <ul id="listing"></ul>
-
   <button id="submit">Hochladen</button>
-</form>
+  <progress id="progress" value=0></progress>
+  <p id="message"></p>
+</div>
 <script>
   document.getElementById("filepickerButton").onclick = function(ev) {
-    ev.preventDefault()
     document.getElementById("filepicker").click()
   }
-  // document.getElementById("submit").onclick = function(ev) {
-  //   console.log( document.querySelector("form").serialize() )
-  // }
+  document.getElementById("submit").onclick = async function(ev) {
+    let path = document.getElementById("path").value
+    let token = document.getElementById("token").value
+    let files = document.getElementById("filepicker").files
+    let progress = document.getElementById("progress")
+    try {
+      progress.max = files.length
+      progress.value = 0
+      for (let file of files) {
+        let relativePath = file.webkitRelativePath.substring(file.webkitRelativePath.indexOf('/') + 1)
+        let res = await fetch(`upload?path=${path}&token=${token}&file=${relativePath}`, {
+          method: "POST",
+          body: file
+        })
+        if (res.status != 200)
+          throw Error("Das Hochladen der Datei " + file.name + " ist leider fehlgeschlagen.")
+        progress.value++
+      }
+    } catch (e) {
+      document.getElementById("message").innerText = e.toString()
+      throw e
+    }
+  }
   document.getElementById("filepicker").addEventListener("change", function(event) {
     let output = document.getElementById("listing")
     let files = event.target.files
 
+    output.innerHTML = ""
     for (let i=0; i<files.length; i++) {
       let item = document.createElement("li");
       item.innerHTML = files[i].webkitRelativePath;
