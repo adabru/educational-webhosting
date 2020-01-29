@@ -25,9 +25,9 @@ let server = http.createServer( async (req, res) => {
     } else if (_url.pathname == '/upload' && req.method == 'POST') {
       let filepath = path.resolve( path.join('./public', _url.query.path, _url.query.file) )
       let basepath = path.resolve('./public')
-      if (!filepath.startsWith(basepath) || filepath.length <= basepath.length) {
+      if (!filepath.startsWith(basepath) || path.dirname(filepath).length <= basepath.length) {
         res.writeHead(400)
-        res.end('invalid file path')
+        return res.end('invalid file path')
       }
       let body = []
       let size = 0

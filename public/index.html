@@ -45,6 +45,7 @@
     try {
       progress.max = files.length
       progress.value = 0
+      document.getElementById("message").innerText = ""
       for (let file of files) {
         let relativePath = file.webkitRelativePath.substring(file.webkitRelativePath.indexOf('/') + 1)
         let res = await fetch(`upload?path=${path}&token=${token}&file=${relativePath}`, {
