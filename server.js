@@ -4,13 +4,13 @@ fs.createReadStream = require('fs').createReadStream
 const path = require('path')
 const url =  require('url')
 
-let port = 2222
-let host = '::1'
 let token = process.argv[2] || process.env.TOKEN
 if (!token) {
-  console.log('\nmissing TOKEN argument: either as first command line argument or as TOKEN environment variable\n')
+  console.log('missing TOKEN argument: either as first command line argument or as TOKEN environment variable\n\nusage:\n    node server.js TOKEN [port]\n')
   return
 }
+let port = process.argv[3] || process.env.PORT || 2222
+let host = process.env.HOST || '::1'
 
 let server = http.createServer( async (req, res) => {
   try {
