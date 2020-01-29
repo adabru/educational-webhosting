@@ -32,6 +32,7 @@
   <button id="submit">Hochladen</button>
   <progress id="progress" value=0></progress>
   <p id="message"></p>
+  <a id="generatedLink"></a>
 </div>
 <script>
   document.getElementById("filepickerButton").onclick = function(ev) {
@@ -43,6 +44,8 @@
     let files = document.getElementById("filepicker").files
     let progress = document.getElementById("progress")
     try {
+      if (files.length > 100)
+        throw "Es sind maximal 100 Dateien erlaubt."
       progress.max = files.length
       progress.value = 0
       document.getElementById("message").innerText = ""
@@ -52,14 +55,20 @@
           method: "POST",
           body: file
         })
-        if (res.status != 200)
-          throw Error("Das Hochladen der Datei " + file.name + " ist leider fehlgeschlagen.")
+        if (res.status == 401)
+          throw "Das Passwort ist nicht korrekt."
+        else if (res.status == 413)
+          throw "Die Datei " + file.name + " ist zu groß."
+        else if (res.status != 200)
+          throw "Das Hochladen der Datei " + file.name + " ist leider fehlgeschlagen."
         progress.value++
       }
     } catch (e) {
       document.getElementById("message").innerText = e.toString()
       throw e
     }
+    let a = document.getElementById("generatedLink")
+    a.href = a.innerText = location.origin + location.pathname + path
   }
   document.getElementById("filepicker").addEventListener("change", function(event) {
     let output = document.getElementById("listing")

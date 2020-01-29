@@ -23,6 +23,12 @@ let server = http.createServer( async (req, res) => {
       res.writeHead(400)
       res.end('invalid path')
     } else if (_url.pathname == '/upload' && req.method == 'POST') {
+      // check token
+      if (_url.query.token != token) {
+        res.writeHead(401)
+        return res.end('wrong token')
+      }
+
       let filepath = path.resolve( path.join('./public', _url.query.path, _url.query.file) )
       let basepath = path.resolve('./public')
       if (!filepath.startsWith(basepath) || path.dirname(filepath).length <= basepath.length) {
@@ -57,11 +63,21 @@ let server = http.createServer( async (req, res) => {
         }
       })
     } else {
-      fs.createReadStream(`./public${_url.pathname}`)
-      .on('error', () => {
-        res.writeHead(404)
-        res.end('not found') })
-      .on('open', () => {
+      let filepath = unescape(`./public${_url.pathname}`)
+      fs.createReadStream(filepath)
+      .on('error', (e) => {
+        console.log(e)
+        if (e.code == 'EISDIR') {
+          res.writeHead(302, {'Location': _url.pathname + '/index.html'})
+          res.end('redirect...')
+        } else if (e.code == 'ENOENT') {
+          res.writeHead(404)
+          res.end('not found')
+        } else {
+          res.writeHead(500)
+          res.end('error')
+        }
+      }).on('open', () => {
         contenttypes = {
           '.js': 'application/javascript',
           '.css': 'text/css',
@@ -72,10 +88,11 @@ let server = http.createServer( async (req, res) => {
           '.pdf': 'application/pdf',
           '.html': 'text/html; charset=utf-8',
           '.htm': 'text/html; charset=utf-8'
-        };
+        }
         // 'Content-Type': 'text/html; charset=utf-8'
-        res.writeHead(200, {'Content-Type': contenttypes[path.extname(_url.pathname)] || 'text/plain; charset=utf-8'})})
-      .pipe(res)
+        let type = contenttypes[path.extname(_url.pathname)]
+        res.writeHead(200, type ? {'Content-Type':  type} : null)
+      }).pipe(res)
     }
   }
   catch (e) {
