@@ -76,14 +76,14 @@ let server = http.createServer( async (req, res) => {
       let filepath = unescape(`./public${_url.pathname}`)
       fs.createReadStream(filepath)
       .on('error', (e) => {
-        console.log(e)
         if (e.code == 'EISDIR') {
-          res.writeHead(302, {'Location': config.baseurl + _url.pathname + '/index.html'})
+          res.writeHead(302, {'Location': path.basename(_url.pathname) + '/index.html'})
           res.end('redirect...')
         } else if (e.code == 'ENOENT') {
           res.writeHead(404)
           res.end('not found')
         } else {
+          console.error(e)
           res.writeHead(500)
           res.end('error')
         }
